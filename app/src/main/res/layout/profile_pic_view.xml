@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/circular_bg"
+        android:src="@drawable/person_icon"
+        android:scaleType="centerCrop"
+        android:layout_centerInParent="true"
+        android:id="@+id/profile_pic_image_view"
+        />
+
+    <ImageView
+        android:id="@+id/status_dot"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_alignEnd="@id/profile_pic_image_view"
+        android:layout_alignBottom="@id/profile_pic_image_view"
+        android:layout_marginEnd="2dp"
+        android:layout_marginBottom="1dp"
+        android:background="@drawable/status_dot_bg" />
+
+
+</RelativeLayout>

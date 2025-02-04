@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "796652601583",
+    "firebase_url": "https://mindset-reels-default-rtdb.firebaseio.com",
+    "project_id": "mindset-reels",
+    "storage_bucket": "mindset-reels.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:796652601583:android:1194d16608add657695b1a",
+        "android_client_info": {
+          "package_name": "com.example.heyyou"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9A3LzebhfMAXgv3dd5k_s_eOPfttdhQc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:796652601583:android:88a887c305fbb6a8695b1a",
+        "android_client_info": {
+          "package_name": "com.example.mindsetreels"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9A3LzebhfMAXgv3dd5k_s_eOPfttdhQc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

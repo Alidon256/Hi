@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.HeyYou" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimaryVariant">#5289B4</item>
+        <item name="colorSecondary">@color/my_primary</item>
+        <item name="colorSecondaryVariant">@color/white</item>
+
+        <!-- Status bar and navigation bar -->
+        <item name="android:statusBarColor">@android:color/white</item> <!-- Transparent status bar -->
+        <item name="android:windowLightStatusBar">true</item> <!-- Dark status bar icons -->
+        <item name="android:navigationBarColor">@android:color/white</item> <!-- Black navigation bar -->
+        <item name="android:windowLightNavigationBar">true</item> <!-- Light navigation bar icons -->
+    </style>
+
+    <style name="Theme.HeyYou" parent="Base.Theme.HeyYou" />
+</resources>
