@@ -1,15 +1,23 @@
 package com.example.heyyou.utils;
 
+import android.content.Context;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.util.Log;
+
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class FirebaseUtil {
 
@@ -22,6 +30,66 @@ public class FirebaseUtil {
     public static String currentUserId() {
         return firebaseAuth.getUid();
     }
+    public static void uploadStatus(Context context, String statusText, Uri mediaUri, String mediaType, OnCompleteListener<DocumentReference> onCompleteListener) throws IOException {
+        if (!mediaType.equals("image") && !mediaType.equals("video")) {
+            return;  // Invalid media type
+        }
+
+        StorageReference statusStorageRef = firebaseStorage.getReference()
+                .child("status_media")
+                .child(currentUserId() + "_" + System.currentTimeMillis());
+
+        if (mediaType.equals("video")) {
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            try {
+                retriever.setDataSource(context, mediaUri);
+                String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                long durationInMs = Long.parseLong(durationStr);
+
+                if (durationInMs > 30000) { // 30 seconds max
+                    Log.e(TAG, "Video duration exceeds 30 seconds");
+                    return;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing video", e);
+                return;
+            } finally {
+                retriever.release();
+            }
+        }
+
+        // Upload media
+        statusStorageRef.putFile(mediaUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    statusStorageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String mediaUrl = uri.toString();
+
+                        Map<String, Object> statusData = new HashMap<>();
+                        statusData.put("userId", currentUserId());
+                        statusData.put("mediaUrl", mediaUrl);
+                        statusData.put("statusText", statusText);
+                        statusData.put("timestamp", FieldValue.serverTimestamp());
+                        statusData.put("mediaType", mediaType);
+
+                        // Upload data to Firestore
+                        firestoreInstance.collection("status")
+                                .add(statusData)
+                                .addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        onCompleteListener.onComplete(task); // Convert task to Void task
+                                    } else {
+                                        onCompleteListener.onComplete(task);
+                                    }
+                                });
+                    }).addOnFailureListener(e -> Log.e(TAG, "Failed to get download URL", e));
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to upload media", e);
+                    onCompleteListener.onComplete(null);  // Handle failure
+                });
+    }
+
+
 
     // Checks if the user is logged in
     public static boolean isLoggedIn() {
@@ -67,8 +135,13 @@ public class FirebaseUtil {
 
     // Converts a Firestore Timestamp to a string format
     public static String timestampToString(Timestamp timestamp) {
-        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(timestamp.toDate());
+        if (timestamp != null) {
+            return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(timestamp.toDate());
+        } else {
+            return "No timestamp available";  // or any default string you prefer
+        }
     }
+
 
     // Logs out the current user and updates online status
     public static void logout() {

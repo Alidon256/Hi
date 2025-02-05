@@ -6,20 +6,22 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.example.heyyou.utils.FirebaseUtil
 import com.example.heyyou.utils.FirebaseUtil.currentUserDetails
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.navigation.NavigationBarView
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity() {
-    var bottomNavigationView: BottomNavigationView? = null
+    private lateinit var bottomNavigationView: BottomNavigationView
     var searchButton: ImageButton? = null
-
-    var chatFragment: ChatFragment? = null
-    var profileFragment: ProfileFragment? = null
+    private lateinit var fab: ExtendedFloatingActionButton
+    private var chatFragment: ChatFragment? = null
+    private var profileFragment: ProfileFragment? = null
+    private var usersFragment: UsersFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,41 +29,57 @@ class MainActivity : AppCompatActivity() {
 
         chatFragment = ChatFragment()
         profileFragment = ProfileFragment()
+        usersFragment = UsersFragment()
 
-        bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        searchButton = findViewById<ImageButton>(R.id.main_search_btn)
 
-        searchButton!!.setOnClickListener(View.OnClickListener { v: View? ->
+        bottomNavigationView = findViewById(R.id.bottom_navigation)
+        searchButton = findViewById(R.id.main_search_btn)
+        fab = findViewById(R.id.add)
+
+
+        fab.setOnClickListener {
+            // Show the UsersFragment when FAB is clicked
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_frame_layout, usersFragment!!)
+                .addToBackStack(null) // Add the transaction to back stack
+                .commit()
+            fab.visibility = View.GONE
+        }
+
+        searchButton!!.setOnClickListener {
             startActivity(Intent(this@MainActivity, SearchUserActivity::class.java))
-        })
+        }
 
-        bottomNavigationView!!.setOnItemSelectedListener(object :
-            NavigationBarView.OnItemSelectedListener {
-            override fun onNavigationItemSelected(item: MenuItem): Boolean {
-                if (item.itemId == R.id.menu_chat) {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.main_frame_layout, chatFragment!!).commit()
-                }
-                if (item.itemId == R.id.menu_profile) {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.main_frame_layout, profileFragment!!).commit()
-                }
-                return true
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            if (item.itemId == R.id.menu_chat) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.main_frame_layout, chatFragment!!).commit()
+                fab.visibility = View.VISIBLE
             }
-        })
-        bottomNavigationView!!.setSelectedItemId(R.id.menu_chat)
+            if (item.itemId == R.id.menu_profile) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.main_frame_layout, profileFragment!!).commit()
+                fab.visibility = View.GONE
+            }
+            if (item.itemId == R.id.Memories) {
+                startActivity(Intent(this@MainActivity, StatusActivity::class.java))
+                fab.visibility = View.GONE
+            }
+            true
+        }
+        bottomNavigationView.setSelectedItemId(R.id.menu_chat)
 
         getFCMToken()
     }
 
-    fun getFCMToken() {
+    private fun getFCMToken() {
         FirebaseMessaging.getInstance().getToken()
-            .addOnCompleteListener(OnCompleteListener { task: Task<String?>? ->
+            .addOnCompleteListener { task: Task<String?>? ->
                 if (task!!.isSuccessful) {
-                    val token = task.getResult()
+                    val token = task.result
                     currentUserDetails().update("fcmToken", token)
                 }
-            })
+            }
     }
     override fun onResume() {
         super.onResume()
@@ -74,16 +92,3 @@ class MainActivity : AppCompatActivity() {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
