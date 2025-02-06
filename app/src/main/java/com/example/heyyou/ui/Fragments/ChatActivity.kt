@@ -1,6 +1,5 @@
-package com.example.heyyou
+package com.example.heyyou.ui.Fragments
 
-import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -19,7 +18,8 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.example.heyyou.adapter.ChatRecyclerAdapter
+import com.example.heyyou.R
+import com.example.heyyou.ui.adapter.ChatRecyclerAdapter
 import com.example.heyyou.model.ChatMessageModel
 import com.example.heyyou.model.ChatroomModel
 import com.example.heyyou.model.UserModel
@@ -91,7 +91,7 @@ class ChatActivity : AppCompatActivity() {
 
         otherUsername.text = otherUser!!.username
 
-        backBtn.setOnClickListener { onBackPressed() }
+        backBtn.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         sendMessageBtn.setOnClickListener {
             val message = messageInput.text.toString().trim()
@@ -104,7 +104,7 @@ class ChatActivity : AppCompatActivity() {
         getOrCreateChatroomModel {
             setupChatRecyclerView() // Setup RecyclerView only after chatroom model is available
         }
-        listenForOtherUserStatus(otherUser!!.userId)
+        otherUser!!.userId?.let { listenForOtherUserStatus(it) }
     }
     private fun showChatMenu(view: View) {
         val popupMenu = androidx.appcompat.widget.PopupMenu(this, view)

@@ -1,5 +1,9 @@
-package com.example.heyyou.adapter
+package com.example.heyyou.ui.adapter
 
+import android.content.Context
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,8 +17,12 @@ import com.example.heyyou.model.StatusModel
 import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
-
 class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
     FirestoreRecyclerAdapter<StatusModel, StatusRecyclerAdapter.StatusViewHolder>(options) {
 
@@ -24,44 +32,59 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
         // Check if the timestamp is null or if it's older than one day
         val timestamp = model.timestamp?.toDate()
         val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
+
+        // Check if the status is expired or invalid
         if (timestamp == null || timestamp.before(oneDayAgo)) {
-            holder.itemView.visibility = View.GONE  // Hide the item if timestamp is null or older than one day
+            if (!model.statusId.isNullOrEmpty()) {
+                // Remove expired status from Firestore
+                FirebaseUtil.getFireStoreInstance().collection("status")
+                    .document(model.statusId)
+                    .delete()
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.d(TAG, "Status deleted successfully")
+                            // Remove item from RecyclerView (only if deleted successfully)
+                            notifyItemRemoved(position)
+                        } else {
+                            Log.e(TAG, "Error deleting status: ${task.exception?.message}")
+                        }
+                    }
+            } else {
+                Log.e(TAG, "Invalid status ID, cannot delete.")
+            }
         } else {
+            // If the status is not expired, display the status normally
             holder.itemView.visibility = View.VISIBLE
             holder.statusText.text = model.statusText
 
-            // Check media type and load accordingly
+            // Load image or video based on media type
             if (model.mediaType == "image") {
                 Glide.with(holder.statusImage.context).load(model.mediaUrl).into(holder.statusImage)
                 holder.statusImage.visibility = View.VISIBLE
                 holder.statusVideo.visibility = View.GONE
             } else if (model.mediaType == "video") {
-                // Load the video into the VideoView
                 holder.statusVideo.setVideoPath(model.mediaUrl)
                 holder.statusVideo.visibility = View.VISIBLE
                 holder.statusImage.visibility = View.GONE
 
-                // Show the thumbnail if video is paused or not playing
+                // Show thumbnail if video is paused
                 if (!holder.statusVideo.isPlaying) {
                     Glide.with(holder.statusImage.context)
-                        .load(model.mediaUrl)  // Load the video thumbnail
+                        .load(model.mediaUrl) // Load thumbnail
                         .into(holder.statusImage)
                     holder.statusImage.visibility = View.VISIBLE
                 } else {
                     holder.statusImage.visibility = View.GONE
                 }
 
-                // Start the video if it's not already playing
+                // Play video if not already playing
                 if (!holder.statusVideo.isPlaying) {
-                    // Pause any currently playing video
                     currentlyPlaying?.pause()
                     currentlyPlaying = holder.statusVideo
                     holder.statusVideo.start()
                 }
 
-                // Optionally, add a listener to stop the video after it finishes
                 holder.statusVideo.setOnCompletionListener {
-                    // Stop playback when finished
                     holder.statusVideo.resume()
                 }
             } else {
@@ -69,7 +92,7 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
                 holder.statusVideo.visibility = View.GONE
             }
 
-            // Format and display the timestamp
+            // Format timestamp
             holder.timestampText.text = FirebaseUtil.timestampToString(model.timestamp)
         }
     }
@@ -79,24 +102,22 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
         return StatusViewHolder(view)
     }
 
-    override fun onDataChanged() {
-        super.onDataChanged()
-        notifyDataSetChanged()
+    // Optional: Handle pausing videos when they go off-screen
+    override fun onViewRecycled(holder: StatusViewHolder) {
+        super.onViewRecycled(holder)
+        if (holder.statusVideo.isPlaying) {
+            holder.statusVideo.pause()
+        }
     }
 
     class StatusViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val statusText: TextView = itemView.findViewById(R.id.statusText)
         val statusImage: ImageView = itemView.findViewById(R.id.statusImage)
-        val statusVideo: VideoView = itemView.findViewById(R.id.statusVideo)  // Video view
+        val statusVideo: VideoView = itemView.findViewById(R.id.statusVideo)
         val timestampText: TextView = itemView.findViewById(R.id.timestampText)
     }
 
-    // Optionally, override this method to stop videos when they go off-screen
-    override fun onViewRecycled(holder: StatusViewHolder) {
-        super.onViewRecycled(holder)
-        // Pause video if it goes off-screen
-        if (holder.statusVideo.isPlaying) {
-            holder.statusVideo.pause()
-        }
+    companion object {
+        private const val TAG = "StatusRecyclerAdapter"
     }
 }

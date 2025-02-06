@@ -1,4 +1,4 @@
-package com.example.heyyou;
+package com.example.heyyou.ui.Fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,7 @@ import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.heyyou.R;
 import com.example.heyyou.model.UserModel;
 import com.example.heyyou.utils.FirebaseUtil;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -55,7 +56,7 @@ public class LoginUsernameActivity extends AppCompatActivity {
         if(userModel!=null){
             userModel.setUsername(username);
         }else{
-            userModel = new UserModel(phoneNumber,username, Timestamp.now(), FirebaseUtil.currentUserId());
+            userModel = new UserModel(phoneNumber,username, Timestamp.now(), FirebaseUtil.currentUserId(),FirebaseUtil.isLoggedIn());
         }
 
         FirebaseUtil.currentUserDetails().set(userModel).addOnCompleteListener(new OnCompleteListener<Void>() {

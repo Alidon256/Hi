@@ -1,4 +1,4 @@
-package com.example.heyyou
+package com.example.heyyou.ui.Fragments
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -6,51 +6,98 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
+import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import android.widget.VideoView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.heyyou.adapter.StatusRecyclerAdapter
+import com.example.heyyou.R
+import com.example.heyyou.ui.adapter.StatusRecyclerAdapter
 import com.example.heyyou.model.StatusModel
 import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-class StatusActivity : AppCompatActivity() {
+class StatusFragment : Fragment() {
 
     private lateinit var statusEditText: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var statusImageView: ImageView
-    private lateinit var uploadButton: Button
+    private lateinit var uploadButton: ImageButton
     private var mediaUri: Uri? = null
     private var mediaType: String? = null  // "image" or "video"
     private var adapter: StatusRecyclerAdapter? = null
     private lateinit var statusVideoView: VideoView
+    private lateinit var constraintStatus:ConstraintLayout
+    private lateinit var fab:FloatingActionButton
+    private lateinit var backStatus:ImageButton
 
     private val PICK_IMAGE_REQUEST = 1
     private val PICK_VIDEO_REQUEST = 2
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_status)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.activity_status, container, false)
+        recyclerView = view.findViewById(R.id.recyclerView)
+        statusEditText = view.findViewById(R.id.statusEditText)
+        statusImageView = view.findViewById(R.id.statusImageView)
+        uploadButton = view.findViewById(R.id.uploadButton)
+        statusVideoView = view.findViewById(R.id.statusVideo)
+        constraintStatus = view.findViewById(R.id.constraintStatus)
+        fab = view.findViewById(R.id.fabStatus)
+        backStatus = view.findViewById(R.id.back_btn_status)
+        fab.isVisible = true
 
-        statusEditText = findViewById(R.id.statusEditText)
-        statusImageView = findViewById(R.id.statusImageView)
-        uploadButton = findViewById(R.id.uploadButton)
-        recyclerView = findViewById(R.id.recyclerView)
-        statusVideoView = findViewById(R.id.statusVideo)
 
-        statusImageView.setOnClickListener {
+        setupClickListeners()
+        setupStatusRecyclerView()
+
+        return view
+    }
+
+    private fun setupClickListeners() {
+        uploadButton.setOnClickListener {
+            val statusText = statusEditText.text.toString().trim()
+
+            if (mediaUri != null && mediaType != null) {
+                // If it's a video, check the duration before uploading
+                if (mediaType == "video" && !isVideoDurationValid(mediaUri!!)) {
+                    Toast.makeText(context, "Video must be 30 seconds or less", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                FirebaseUtil.uploadStatus(context, statusText, mediaUri!!, mediaType!!) { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(context, "Status uploaded!", Toast.LENGTH_SHORT).show()
+                        constraintStatus.isVisible = false
+                        fab.isVisible = true
+                    } else {
+                        Toast.makeText(context, "Failed to upload status", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Please select an image or video", Toast.LENGTH_SHORT).show()
+            }
+
+        }
+        fab.setOnClickListener {
             // Create an options dialog for selecting image or video
+            constraintStatus.isVisible = true
+            fab.isVisible = false
             val options = arrayOf("Select Image", "Select Video")
-            val builder = AlertDialog.Builder(this)
+            val builder = AlertDialog.Builder(requireContext())
             builder.setTitle("Select Media")
             builder.setItems(options) { _, which ->
                 when (which) {
@@ -59,42 +106,24 @@ class StatusActivity : AppCompatActivity() {
                         intent.type = "image/*"
                         startActivityForResult(intent, PICK_IMAGE_REQUEST)
                     }
+
                     1 -> { // If "Select Video" is clicked
                         val intent = Intent(Intent.ACTION_PICK)
                         intent.type = "video/*"
                         startActivityForResult(intent, PICK_VIDEO_REQUEST)
                     }
+
                 }
             }
             builder.show()
         }
-
-
-        setupStatusRecyclerView()
-
-        uploadButton.setOnClickListener {
-            val statusText = statusEditText.text.toString().trim()
-
-            if (mediaUri != null && mediaType != null) {
-                // If it's a video, check the duration before uploading
-                if (mediaType == "video" && !isVideoDurationValid(mediaUri!!)) {
-                    Toast.makeText(this, "Video must be 30 seconds or less", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                FirebaseUtil.uploadStatus(this@StatusActivity, statusText, mediaUri!!, mediaType!!) { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(this, "Status uploaded!", Toast.LENGTH_SHORT).show()
-                        finish()  // Close activity after uploading
-                    } else {
-                        Toast.makeText(this, "Failed to upload status", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
-                Toast.makeText(this, "Please select an image or video", Toast.LENGTH_SHORT).show()
-            }
+        backStatus.setOnClickListener{
+            constraintStatus.isVisible = false
+            fab.isVisible = true
         }
     }
+
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -129,7 +158,7 @@ class StatusActivity : AppCompatActivity() {
             .build()
 
         adapter = StatusRecyclerAdapter(options)
-        recyclerView.layoutManager = LinearLayoutManager(this@StatusActivity)
+        recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         adapter?.startListening()
     }
@@ -146,7 +175,7 @@ class StatusActivity : AppCompatActivity() {
 
     private fun isVideoDurationValid(videoUri: Uri): Boolean {
         val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(this, videoUri)
+        retriever.setDataSource(context, videoUri)
         val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
         val durationInMs = durationStr?.toLongOrNull() ?: 0
         retriever.release()

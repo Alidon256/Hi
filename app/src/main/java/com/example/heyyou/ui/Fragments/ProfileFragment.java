@@ -1,4 +1,4 @@
-package com.example.heyyou;
+package com.example.heyyou.ui.Fragments;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -15,20 +15,15 @@ import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.heyyou.R;
 import com.example.heyyou.model.UserModel;
 import com.example.heyyou.utils.AndroidUtil;
 import com.example.heyyou.utils.FirebaseUtil;
 import com.github.dhaval2404.imagepicker.ImagePicker;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
-
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 
 public class ProfileFragment extends Fragment {
 

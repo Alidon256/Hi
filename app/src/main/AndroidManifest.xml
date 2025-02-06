@@ -7,6 +7,7 @@
 
 
     <application
+        android:name=".utils.MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -17,7 +18,7 @@
         android:theme="@style/Theme.HeyYou"
         tools:targetApi="31">
         <activity
-            android:name=".StatusActivity"
+            android:name=".ui.Fragments.StatusFragment"
             android:exported="false" />
 
         <meta-data
@@ -28,42 +29,42 @@
             android:resource="@color/my_primary" />
 
         <activity
-            android:name=".ChatActivity"
+            android:name=".ui.Fragments.ChatActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
-            android:name=".SearchUserActivity"
+            android:name=".ui.Fragments.SearchUserActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
-            android:name=".LoginUsernameActivity"
+            android:name=".ui.Fragments.LoginUsernameActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
-            android:name=".LoginOtpActivity"
+            android:name=".ui.Fragments.LoginOtpActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
-            android:name=".LoginPhoneNumberActivity"
+            android:name=".ui.Fragments.LoginPhoneNumberActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
-            android:name=".SplashActivity"
+            android:name=".ui.Fragments.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -76,7 +77,7 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.Fragments.MainActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
@@ -84,7 +85,7 @@
         </activity>
 
         <service
-            android:name=".FCMNotificationService"
+            android:name=".ui.Fragments.FCMNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

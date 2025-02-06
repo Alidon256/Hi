@@ -4,22 +4,56 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".UsersFragment">
+    tools:context=".ui.Fragments.UsersFragment">
 
-    <TextView
-        android:id="@+id/newGroup"
+    <LinearLayout
+        android:id="@+id/LinearGroup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/my_primary"
-        android:drawableStart="@drawable/ic_add"
-        android:text="New Group"
-        android:textColor="@color/white"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+        <ImageView
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:padding="8dp"
+            android:background="@drawable/itemback"
+            android:src="@drawable/ic_group"
+            android:scaleType="centerCrop"
+            android:layout_centerInParent="true"
+            android:id="@+id/profile_pic_image_view"
+            />
+        <TextView
+            android:id="@+id/newGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Group"
+            android:textStyle="bold"
+            android:padding="5dp"
+            android:textSize="18sp"
+            android:layout_margin="8dp"
+            android:textColor="@color/black" />
 
+    </LinearLayout>
+
+
+<TextView
+    android:id="@+id/hiContacts"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Contacts on Hi"
+    android:layout_marginStart="8dp"
+    android:paddingStart="8dp"
+    android:paddingBottom="8dp"
+    android:textSize="14sp"
+    android:paddingTop="4dp"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/LinearGroup"/>
 <androidx.recyclerview.widget.RecyclerView
     android:id="@+id/recyclerView"
-    app:layout_constraintTop_toBottomOf="@+id/newGroup"
+    app:layout_constraintTop_toBottomOf="@+id/hiContacts"
     android:layout_width="match_parent"
     android:layout_height="0dp"/>
 

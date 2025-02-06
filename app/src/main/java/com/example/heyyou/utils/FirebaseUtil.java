@@ -26,6 +26,10 @@ public class FirebaseUtil {
     private static final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private static final FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
 
+
+    public static FirebaseFirestore getFireStoreInstance() {
+        return firestoreInstance;
+    }
     // Returns the current user ID
     public static String currentUserId() {
         return firebaseAuth.getUid();
@@ -180,7 +184,7 @@ public class FirebaseUtil {
                     }
 
                     if (snapshot != null && snapshot.exists()) {
-                        boolean isOnline = snapshot.getBoolean("isOnline") != null && snapshot.getBoolean("isOnline");
+                        boolean isOnline = snapshot.getBoolean("isOnline") != null && Boolean.TRUE.equals(snapshot.getBoolean("isOnline"));
                         callback.onStatusChanged(isOnline);
                     }
                 });

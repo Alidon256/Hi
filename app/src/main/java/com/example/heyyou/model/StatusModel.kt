@@ -7,6 +7,7 @@ data class StatusModel(
     val mediaUrl: String = "",  // Can be an image or video URL
     val statusText: String = "",
     val timestamp: Timestamp = Timestamp.now(),
-    val mediaType: String = ""  // "image" or "video"
+    val mediaType: String = "",  // "image" or "video"
+    val statusId: String = ""
 )
 

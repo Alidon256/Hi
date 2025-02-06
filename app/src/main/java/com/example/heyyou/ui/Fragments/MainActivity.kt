@@ -1,15 +1,13 @@
-package com.example.heyyou
+package com.example.heyyou.ui.Fragments
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
+import com.example.heyyou.R
 import com.example.heyyou.utils.FirebaseUtil
 import com.example.heyyou.utils.FirebaseUtil.currentUserDetails
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -22,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private var chatFragment: ChatFragment? = null
     private var profileFragment: ProfileFragment? = null
     private var usersFragment: UsersFragment? = null
+    private var statusFragment: StatusFragment?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +29,8 @@ class MainActivity : AppCompatActivity() {
         chatFragment = ChatFragment()
         profileFragment = ProfileFragment()
         usersFragment = UsersFragment()
+        statusFragment = StatusFragment()
+
 
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
@@ -62,7 +63,8 @@ class MainActivity : AppCompatActivity() {
                 fab.visibility = View.GONE
             }
             if (item.itemId == R.id.Memories) {
-                startActivity(Intent(this@MainActivity, StatusActivity::class.java))
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.main_frame_layout, statusFragment!!).commit()
                 fab.visibility = View.GONE
             }
             true

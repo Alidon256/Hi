@@ -1,61 +1,33 @@
-package com.example.heyyou.model;
+package com.example.heyyou.model
 
-import com.google.firebase.Timestamp;
+import com.google.firebase.Timestamp
 
-public class UserModel {
-    private String phone;
-    private String username;
-    private Timestamp createdTimestamp;
-    private String userId;
-    private String fcmToken;
-
-    public UserModel() {
+data class UserModel(
+    var phone: String? = null,
+    var username: String? = null,
+    var createdTimestamp: Timestamp? = null,
+    var userId: String? = null,
+    var fcmToken: String? = null,
+    var isOnline: Boolean = false,
+    var searchKeywords: List<String> = listOf()
+) {
+    // Custom function to update search keywords
+    private fun updateSearchKeywords() {
+        // You can add logic here to create a list of keywords based on user information
+        searchKeywords = listOfNotNull(
+            username?.lowercase()?.trim(),
+            phone?.take(3) // Or use a part of the phone number or any other data
+        )
     }
 
-    public UserModel(String phone, String username, Timestamp createdTimestamp,String userId) {
-        this.phone = phone;
-        this.username = username;
-        this.createdTimestamp = createdTimestamp;
-        this.userId = userId;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Timestamp getCreatedTimestamp() {
-        return createdTimestamp;
-    }
-
-    public void setCreatedTimestamp(Timestamp createdTimestamp) {
-        this.createdTimestamp = createdTimestamp;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getFcmToken() {
-        return fcmToken;
-    }
-
-    public void setFcmToken(String fcmToken) {
-        this.fcmToken = fcmToken;
+    // Constructor that can be used to initialize the data and auto-update search keywords
+    constructor(
+        phone: String?,
+        username: String?,
+        createdTimestamp: Timestamp?,
+        userId: String?,
+        isOnline: Boolean
+    ) : this(phone, username, createdTimestamp, userId, null, isOnline) {
+        updateSearchKeywords()  // Automatically update search keywords when an instance is created
     }
 }

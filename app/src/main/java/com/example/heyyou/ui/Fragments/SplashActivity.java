@@ -1,4 +1,4 @@
-package com.example.heyyou;
+package com.example.heyyou.ui.Fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,6 +7,7 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.heyyou.R;
 import com.example.heyyou.model.UserModel;
 import com.example.heyyou.utils.AndroidUtil;
 import com.example.heyyou.utils.FirebaseUtil;

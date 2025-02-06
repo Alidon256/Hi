@@ -1,4 +1,4 @@
-package com.example.heyyou
+package com.example.heyyou.ui.Fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,7 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.heyyou.adapter.SearchUserRecyclerAdapter
+import com.example.heyyou.R
+import com.example.heyyou.ui.adapter.SearchUserRecyclerAdapter
 import com.example.heyyou.model.UserModel
 import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
@@ -17,7 +18,9 @@ class UsersFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SearchUserRecyclerAdapter
+ class UsersFragment(){
 
+ }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -51,5 +54,10 @@ class UsersFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         adapter.stopListening()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        adapter.notifyDataSetChanged()
     }
 }
