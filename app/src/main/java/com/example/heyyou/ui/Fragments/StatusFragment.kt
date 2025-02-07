@@ -25,8 +25,10 @@ import com.example.heyyou.model.StatusModel
 import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import java.util.Calendar
 
 class StatusFragment : Fragment() {
 
@@ -150,12 +152,16 @@ class StatusFragment : Fragment() {
     }
 
     private fun setupStatusRecyclerView() {
-        val query = FirebaseFirestore.getInstance().collection("status")
+        val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
+        val query = FirebaseFirestore.getInstance()
+            .collection("status")
+            .whereGreaterThan("timestamp", Timestamp(oneDayAgo)) // Filter out old statuses
             .orderBy("timestamp", Query.Direction.DESCENDING)
 
         val options = FirestoreRecyclerOptions.Builder<StatusModel>()
             .setQuery(query, StatusModel::class.java)
             .build()
+
 
         adapter = StatusRecyclerAdapter(options)
         recyclerView.layoutManager = LinearLayoutManager(context)

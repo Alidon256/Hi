@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -8,18 +9,51 @@
     android:background="@android:color/white"
     android:elevation="2dp">
 
-    <!-- Status Text -->
-    <TextView
-        android:id="@+id/statusText"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Sample Status"
-        android:textSize="16sp"
-        android:textColor="@android:color/black"
-        android:paddingStart="6dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp" />
+        android:layout_marginBottom="4dp"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/me"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@color/my_primary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/ImageCircularDesign" />
+        <TextView
+            android:id="@+id/userName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"
+            android:text="Ali Stack"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="@id/me"
+            app:layout_constraintStart_toEndOf="@id/me"
+            app:layout_constraintTop_toTopOf="@id/me"
+            app:layout_constraintVertical_bias="0.5" />
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text="Some times a dream house is all you need as a programmer"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@id/me"
+            app:layout_constraintTop_toBottomOf="@id/me"
+            app:layout_constraintVertical_bias="0.5" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="300dp">

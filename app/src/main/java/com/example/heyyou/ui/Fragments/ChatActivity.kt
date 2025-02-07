@@ -157,7 +157,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
 
-    fun pickImageFromGallery() {
+    private fun pickImageFromGallery() {
         pickImageLauncher.launch("image/*")
     }
 

@@ -11,16 +11,25 @@ data class UserModel(
     var isOnline: Boolean = false,
     var searchKeywords: List<String> = listOf()
 ) {
-    // Custom function to update search keywords
-    private fun updateSearchKeywords() {
-        // You can add logic here to create a list of keywords based on user information
-        searchKeywords = listOfNotNull(
-            username?.lowercase()?.trim(),
-            phone?.take(3) // Or use a part of the phone number or any other data
-        )
+    init {
+        updateSearchKeywords() // Call in the init block
     }
 
-    // Constructor that can be used to initialize the data and auto-update search keywords
+    // Generate all possible substrings of the username for search
+    private fun updateSearchKeywords() {
+        val name = username?.lowercase()?.trim() ?: return
+        val keywords = mutableListOf<String>()
+
+        for (i in name.indices) {
+            for (j in i..<name.length) { // Corrected line
+                keywords.add(name.substring(i, j + 1)) // Corrected line
+            }
+        }
+
+        searchKeywords = keywords.filter { it.isNotEmpty() }.distinct()
+    }
+
+    // Auto-generate search keywords when instance is created
     constructor(
         phone: String?,
         username: String?,
@@ -28,6 +37,6 @@ data class UserModel(
         userId: String?,
         isOnline: Boolean
     ) : this(phone, username, createdTimestamp, userId, null, isOnline) {
-        updateSearchKeywords()  // Automatically update search keywords when an instance is created
+        //updateSearchKeywords() // No need to call here anymore
     }
 }

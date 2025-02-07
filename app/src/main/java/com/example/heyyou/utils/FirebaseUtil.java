@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
@@ -61,39 +62,47 @@ public class FirebaseUtil {
                 retriever.release();
             }
         }
-
-        // Upload media
         statusStorageRef.putFile(mediaUri)
                 .addOnSuccessListener(taskSnapshot -> {
                     statusStorageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String mediaUrl = uri.toString();
 
+                        // Create a new document reference with an auto-generated ID
+                        DocumentReference statusDocRef = firestoreInstance.collection("status").document();
+                        String docId = statusDocRef.getId(); // Get the generated ID
+
                         Map<String, Object> statusData = new HashMap<>();
+                        statusData.put("statusId", docId);  // Assign document ID as statusId
                         statusData.put("userId", currentUserId());
                         statusData.put("mediaUrl", mediaUrl);
                         statusData.put("statusText", statusText);
                         statusData.put("timestamp", FieldValue.serverTimestamp());
                         statusData.put("mediaType", mediaType);
 
-                        // Upload data to Firestore
-                        firestoreInstance.collection("status")
-                                .add(statusData)
+                        // Use set() and properly handle Task<Void>
+                        statusDocRef.set(statusData)
                                 .addOnCompleteListener(task -> {
                                     if (task.isSuccessful()) {
-                                        onCompleteListener.onComplete(task); // Convert task to Void task
+                                        // Convert success to Task<DocumentReference>
+                                        if (onCompleteListener != null) {
+                                            onCompleteListener.onComplete(Tasks.forResult(statusDocRef));
+                                        }
                                     } else {
-                                        onCompleteListener.onComplete(task);
+                                        // Manually create a failure task with the same exception
+                                        if (onCompleteListener != null) {
+                                            onCompleteListener.onComplete(Tasks.forException(task.getException()));
+                                        }
                                     }
                                 });
                     }).addOnFailureListener(e -> Log.e(TAG, "Failed to get download URL", e));
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to upload media", e);
-                    onCompleteListener.onComplete(null);  // Handle failure
+                    if (onCompleteListener != null) {
+                        onCompleteListener.onComplete(Tasks.forException(e)); // Handle failure properly
+                    }
                 });
     }
-
-
 
     // Checks if the user is logged in
     public static boolean isLoggedIn() {
@@ -152,7 +161,24 @@ public class FirebaseUtil {
         setUserOnlineStatus(false); // Set user offline before logout
         firebaseAuth.signOut();
     }
+    public static void getUserName(String userId, UserNameCallback callback) {
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        String name = document.getString("username");
+                        callback.onSuccess(name != null ? name : "Unknown");
+                    } else {
+                        callback.onFailure();
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure());
+    }
 
+    public interface UserNameCallback {
+        void onSuccess(String name);
+        void onFailure();
+    }
     // Returns a reference to the current user's profile picture storage location
     public static StorageReference getCurrentProfilePicStorageRef() {
         return firebaseStorage.getReference().child("profile_pic").child(currentUserId());

@@ -1,7 +1,8 @@
 package com.example.heyyou.ui.Fragments
 
 import android.os.Bundle
-import android.view.View
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
@@ -16,73 +17,73 @@ import java.util.Locale
 
 class SearchUserActivity : AppCompatActivity() {
 
-    lateinit var searchInput: EditText
-    lateinit var searchButton: ImageButton
-    lateinit var backButton: ImageButton
-    lateinit var recyclerView: RecyclerView
-
-    var adapter: SearchUserRecyclerAdapter? = null  // Change to nullable
+    private lateinit var searchInput: EditText
+    private lateinit var backButton: ImageButton
+    private lateinit var recyclerView: RecyclerView
+    private var adapter: SearchUserRecyclerAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search_user)
 
         searchInput = findViewById(R.id.seach_username_input)
-        searchButton = findViewById(R.id.search_user_btn)
         backButton = findViewById(R.id.back_btn)
         recyclerView = findViewById(R.id.search_user_recycler_view)
 
         searchInput.requestFocus()
 
-        backButton.setOnClickListener {
-            finish()
-        }
+        backButton.setOnClickListener { finish() }
 
-        searchButton.setOnClickListener(View.OnClickListener {
-            val searchTerm = searchInput.text.toString().trim { it <= ' ' }.lowercase(Locale.getDefault())
-            if (searchTerm.isEmpty() || searchTerm.length < 3) {
-                searchInput.error = "Invalid Username"
-                return@OnClickListener
+        // Live search as user types
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val searchTerm = s.toString().trim()
+                if (searchTerm.length >= 2) {
+                    setupSearchRecyclerView(searchTerm)
+                } else {
+                    clearResults()
+                }
             }
-            setupSearchRecyclerView(searchTerm)
+
+            override fun afterTextChanged(s: Editable?) {}
         })
     }
 
     private fun setupSearchRecyclerView(searchTerm: String) {
-        // Adjust the query to use `whereArrayContains` for substring search
+        val lowercaseSearchTerm = searchTerm.lowercase(Locale.getDefault())
+
         val query = FirebaseUtil.allUserCollectionReference()
-            .whereArrayContains("searchKeywords", searchTerm) // Use this to search in substrings
+            .whereArrayContains("searchKeywords", lowercaseSearchTerm) // Match any substring
 
         val options = FirestoreRecyclerOptions.Builder<UserModel>()
             .setQuery(query, UserModel::class.java)
+            .setLifecycleOwner(this) // Automatically manages start/stop listening
             .build()
 
-        // Initialize the adapter only if it hasn't been initialized already
         if (adapter == null) {
             adapter = SearchUserRecyclerAdapter(options, applicationContext)
             recyclerView.layoutManager = LinearLayoutManager(this)
             recyclerView.adapter = adapter
+            adapter?.startListening()
+        } else {
+            adapter?.updateOptions(options) // Update results dynamically
         }
+    }
 
-        // Start listening after setting up the adapter
-        adapter?.startListening()
+    private fun clearResults() {
+        adapter?.stopListening()
+        adapter?.notifyDataSetChanged()
+        recyclerView.adapter = null // Hide RecyclerView when no search
     }
 
     override fun onStart() {
         super.onStart()
-        // Only call startListening if the adapter is initialized
-        adapter?.startListening()
     }
 
     override fun onStop() {
         super.onStop()
-        // Only stop listening if the adapter is initialized
         adapter?.stopListening()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Only call startListening if the adapter is initialized
-        adapter?.startListening()
     }
 }
