@@ -8,6 +8,9 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.heyyou.model.UserModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.LocalCacheSettings
 
 object AndroidUtil {
     @JvmStatic
@@ -34,6 +37,7 @@ object AndroidUtil {
 
     @JvmStatic
     fun setProfilePic(context: Context, imageUri: Uri?, imageView: ImageView) {
+        FirebaseFirestore.getInstance().firestoreSettings.cacheSettings
         Glide
             .with(context)
             .load(imageUri)

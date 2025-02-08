@@ -18,7 +18,8 @@
             android:id="@+id/me"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@color/my_primary"
+            android:background="@drawable/back_count"
+            android:src="@drawable/person_icon_white"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearanceOverlay="@style/ImageCircularDesign" />
@@ -85,7 +86,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Just now"
-        android:textSize="12sp"
+        android:textSize="14sp"
         android:paddingStart="6dp"
         android:textColor="@android:color/darker_gray"
         android:paddingTop="4dp" />

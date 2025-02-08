@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.heyyou.R
 import com.example.heyyou.ui.adapter.StatusRecyclerAdapter
 import com.example.heyyou.model.StatusModel
+import com.example.heyyou.ui.adapter.StatusGroupAdapter
 import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -40,9 +41,11 @@ class StatusFragment : Fragment() {
     private var mediaType: String? = null  // "image" or "video"
     private var adapter: StatusRecyclerAdapter? = null
     private lateinit var statusVideoView: VideoView
-    private lateinit var constraintStatus:ConstraintLayout
-    private lateinit var fab:FloatingActionButton
-    private lateinit var backStatus:ImageButton
+    private lateinit var constraintStatus: ConstraintLayout
+    private lateinit var fab: FloatingActionButton
+    private lateinit var backStatus: ImageButton
+    private lateinit var statusGroupAdapter: StatusGroupAdapter
+    private lateinit var statusGroupRecyclerView: RecyclerView
 
     private val PICK_IMAGE_REQUEST = 1
     private val PICK_VIDEO_REQUEST = 2
@@ -60,14 +63,63 @@ class StatusFragment : Fragment() {
         constraintStatus = view.findViewById(R.id.constraintStatus)
         fab = view.findViewById(R.id.fabStatus)
         backStatus = view.findViewById(R.id.back_btn_status)
+        statusGroupRecyclerView = view.findViewById(R.id.recyclerViewStatus)
         fab.isVisible = true
-
 
         setupClickListeners()
         setupStatusRecyclerView()
+        setupStatusGroupRecyclerView()
 
         return view
     }
+
+    private fun setupStatusGroupRecyclerView() {
+        val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
+        val query = FirebaseFirestore.getInstance()
+            .collection("status")
+            .whereGreaterThan("timestamp", Timestamp(oneDayAgo)) // Filter out old statuses
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(1)  // Limit the query to just one document
+
+        val options = FirestoreRecyclerOptions.Builder<StatusModel>()
+            .setQuery(query, StatusModel::class.java)
+            .build()
+
+        statusGroupAdapter = StatusGroupAdapter(options ){ userId ->
+            // Handle item click and fetch the specific user's statuses
+            updateStatusRecyclerView(userId)
+        }
+        statusGroupRecyclerView.layoutManager = LinearLayoutManager(context)
+        statusGroupRecyclerView.adapter = statusGroupAdapter
+        statusGroupAdapter.startListening()
+    }
+    private fun updateStatusRecyclerView(userId: String) {
+        val query = FirebaseFirestore.getInstance()
+            .collection("status")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+
+        val options = FirestoreRecyclerOptions.Builder<StatusModel>()
+            .setQuery(query, StatusModel::class.java)
+            .build()
+
+        // Update the adapter with new query options for all statuses
+        adapter?.updateOptions(options)
+
+        // Now, add the query for the selected user's statuses
+        val userQuery = FirebaseFirestore.getInstance()
+            .collection("status")
+            .whereEqualTo("userId", userId)  // Filter by the selected user's ID
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+
+        val userOptions = FirestoreRecyclerOptions.Builder<StatusModel>()
+            .setQuery(userQuery, StatusModel::class.java)
+            .build()
+
+        // Update the adapter to reflect the user's statuses
+        adapter?.updateOptions(userOptions)
+    }
+
+
 
     private fun setupClickListeners() {
         uploadButton.setOnClickListener {
@@ -92,8 +144,8 @@ class StatusFragment : Fragment() {
             } else {
                 Toast.makeText(context, "Please select an image or video", Toast.LENGTH_SHORT).show()
             }
-
         }
+
         fab.setOnClickListener {
             // Create an options dialog for selecting image or video
             constraintStatus.isVisible = true
@@ -114,18 +166,16 @@ class StatusFragment : Fragment() {
                         intent.type = "video/*"
                         startActivityForResult(intent, PICK_VIDEO_REQUEST)
                     }
-
                 }
             }
             builder.show()
         }
-        backStatus.setOnClickListener{
+
+        backStatus.setOnClickListener {
             constraintStatus.isVisible = false
             fab.isVisible = true
         }
     }
-
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -161,7 +211,6 @@ class StatusFragment : Fragment() {
         val options = FirestoreRecyclerOptions.Builder<StatusModel>()
             .setQuery(query, StatusModel::class.java)
             .build()
-
 
         adapter = StatusRecyclerAdapter(options)
         recyclerView.layoutManager = LinearLayoutManager(context)

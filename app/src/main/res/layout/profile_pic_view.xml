@@ -4,12 +4,13 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:layout_width="52dp"
         android:layout_height="52dp"
-        android:background="@drawable/circular_bg"
-        android:src="@drawable/person_icon"
+        android:background="@drawable/back_count"
+        android:src="@drawable/person_icon_white"
         android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/ImageCircularDesign"
         android:layout_centerInParent="true"
         android:id="@+id/profile_pic_image_view"
         />

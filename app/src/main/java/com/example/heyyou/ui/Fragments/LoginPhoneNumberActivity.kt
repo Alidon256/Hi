@@ -1,47 +1,44 @@
-package com.example.heyyou.ui.Fragments;
+package com.example.heyyou.ui.Fragments
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.content.Intent
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
+import com.example.heyyou.R
+import com.hbb20.CountryCodePicker
 
-import androidx.appcompat.app.AppCompatActivity;
+class LoginPhoneNumberActivity : AppCompatActivity() {
+    private lateinit var countryCodePicker: CountryCodePicker
+    private lateinit var phoneInput: EditText
+    private lateinit var sendOtpBtn: Button
+    private lateinit var progressBar: ProgressBar
 
-import com.example.heyyou.R;
-import com.hbb20.CountryCodePicker;
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login_phone_number)
 
-public class LoginPhoneNumberActivity extends AppCompatActivity {
+        countryCodePicker = findViewById(R.id.login_countrycode)
+        phoneInput = findViewById(R.id.login_mobile_number)
+        sendOtpBtn = findViewById(R.id.send_otp_btn)
+        progressBar = findViewById(R.id.login_progress_bar)
 
-    CountryCodePicker countryCodePicker;
-    EditText phoneInput;
-    Button sendOtpBtn;
-    ProgressBar progressBar;
+        progressBar.visibility = View.GONE
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login_phone_number);
-
-        countryCodePicker = findViewById(R.id.login_countrycode);
-        phoneInput = findViewById(R.id.login_mobile_number);
-        sendOtpBtn = findViewById(R.id.send_otp_btn);
-        progressBar = findViewById(R.id.login_progress_bar);
-
-        progressBar.setVisibility(View.GONE);
-
-        countryCodePicker.registerCarrierNumberEditText(phoneInput);
-        sendOtpBtn.setOnClickListener((v)->{
-            if(!countryCodePicker.isValidFullNumber()){
-                phoneInput.setError("Phone number not valid");
-                return;
+        countryCodePicker.registerCarrierNumberEditText(phoneInput)
+        sendOtpBtn.setOnClickListener {
+            if (!countryCodePicker.isValidFullNumber) {
+                phoneInput.error = "Phone number not valid"
+                return@setOnClickListener
             }
-            Intent intent = new Intent(LoginPhoneNumberActivity.this,LoginOtpActivity.class);
-            intent.putExtra("phone",countryCodePicker.getFullNumberWithPlus());
-            startActivity(intent);
-        });
+            val intent = Intent(
+                this@LoginPhoneNumberActivity,
+                LoginOtpActivity::class.java
+            )
+            intent.putExtra("phone", countryCodePicker.fullNumberWithPlus)
+            startActivity(intent)
+        }
     }
-
-
 }
