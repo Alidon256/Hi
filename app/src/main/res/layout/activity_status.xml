@@ -45,19 +45,18 @@
                         android:layout_centerVertical="true"
                         android:layout_marginStart="8dp"
                         android:layout_marginTop="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:background="@drawable/back_count"
                         android:elevation="4dp"
-                        android:src="@drawable/icon_back"
+                        android:src="@drawable/icon_back_white"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@color/black" />
+                        app:tint="@color/white" />
 
                     <ImageView
                         android:id="@+id/statusImageView"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_gravity="center"
-                        android:background="@android:color/darker_gray"
                         android:contentDescription="Select Image or Video"
                         android:scaleType="centerCrop"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -67,11 +66,11 @@
                     <VideoView
                         android:id="@+id/statusVideo"
                         android:layout_width="match_parent"
-                        android:layout_height="0dp"
+                        android:layout_height="580dp"
+                        android:visibility="gone"
                         android:layout_gravity="center"
                         android:contentDescription="Video"
                         android:scaleType="centerCrop"
-                        android:visibility="gone"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />

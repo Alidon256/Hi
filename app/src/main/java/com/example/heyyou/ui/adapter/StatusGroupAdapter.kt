@@ -10,16 +10,14 @@ import com.bumptech.glide.Glide
 import com.example.heyyou.R
 import com.example.heyyou.model.StatusModel
 import com.example.heyyou.utils.FirebaseUtil
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter
-import com.firebase.ui.firestore.FirestoreRecyclerOptions
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.Calendar
+import com.google.firebase.Timestamp
+import java.util.*
 
 class StatusGroupAdapter(
-    options: FirestoreRecyclerOptions<StatusModel>,
+    private var statusList: List<StatusModel>,
     private val onItemClick: (String) -> Unit
-) : FirestoreRecyclerAdapter<StatusModel, StatusGroupAdapter.StatusGroupViewHolder>(options) {
+) : RecyclerView.Adapter<StatusGroupAdapter.StatusGroupViewHolder>() {
 
     class StatusGroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val imageBackStatus: ImageView = itemView.findViewById(R.id.imageBackStatus)
@@ -37,38 +35,29 @@ class StatusGroupAdapter(
                     imageStatusUser.setImageResource(R.drawable.person_icon_white)
                 }
 
-            when (model.mediaType) {
-                "image" -> {
-                    Glide.with(itemView.context)
-                        .load(model.mediaUrl)
-                        .placeholder(R.drawable.person_icon_white)
-                        .into(imageBackStatus)
-                }
+            // Load status image/video
+            Glide.with(itemView.context)
+                .load(model.mediaUrl)
+                .placeholder(R.drawable.person_icon_white)
+                .into(imageBackStatus)
 
-                "video" -> {
-                    Glide.with(itemView.context)
-                        .load(model.mediaUrl)
-                        .placeholder(R.drawable.person_icon_white)
-                        .into(imageBackStatus)
-                }
-            }
-
-            // Fetch and count statuses within the last 24 hours for this user
+            // Real-time status count update
             val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
             val oneDayAgoTimestamp = Timestamp(oneDayAgo)
 
             FirebaseFirestore.getInstance()
                 .collection("status")
-                .whereEqualTo("userId", model.userId)  // Filter by userId
-                .whereGreaterThan("timestamp", oneDayAgoTimestamp)  // Filter by timestamp (within last 24 hours)
-                .get()
-                .addOnSuccessListener { result ->
-                    val statusCount = result.size()
-                    statusCountTextView.text ="$statusCount"
-                    /*"$statusCount status${if (statusCount > 1) "es" else ""}"*/
+                .whereEqualTo("userId", model.userId)
+                .whereGreaterThan("timestamp", oneDayAgoTimestamp)
+                .addSnapshotListener { result, _ ->
+                    if (result != null) {
+                        val statusCount = result.size()
+                        statusCountTextView.text = "$statusCount"
+                    }
                 }
+
             itemView.setOnClickListener {
-                onItemClick(model.userId)  // Trigger the click callback
+                onItemClick(model.userId)
             }
         }
     }
@@ -78,12 +67,14 @@ class StatusGroupAdapter(
         return StatusGroupViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: StatusGroupViewHolder, position: Int, model: StatusModel) {
-        holder.bind(model, onItemClick)  // Pass the lambda to bind
+    override fun onBindViewHolder(holder: StatusGroupViewHolder, position: Int) {
+        holder.bind(statusList[position], onItemClick)
     }
 
-    override fun onDataChanged() {
-        super.onDataChanged()
+    override fun getItemCount(): Int = statusList.size
+
+    fun updateStatusList(newList: List<StatusModel>) {
+        statusList = newList
         notifyDataSetChanged()
     }
 }

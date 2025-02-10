@@ -37,7 +37,10 @@ object AndroidUtil {
 
     @JvmStatic
     fun setProfilePic(context: Context, imageUri: Uri?, imageView: ImageView) {
-        FirebaseFirestore.getInstance().firestoreSettings.cacheSettings
+        val firestore = FirebaseFirestore.getInstance()
+        firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .build()
         Glide
             .with(context)
             .load(imageUri)

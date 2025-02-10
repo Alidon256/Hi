@@ -28,6 +28,7 @@ import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import java.util.Calendar
 
@@ -46,15 +47,19 @@ class StatusFragment : Fragment() {
     private lateinit var backStatus: ImageButton
     private lateinit var statusGroupAdapter: StatusGroupAdapter
     private lateinit var statusGroupRecyclerView: RecyclerView
+    private var statusListener: ListenerRegistration? = null
 
-    private val PICK_IMAGE_REQUEST = 1
-    private val PICK_VIDEO_REQUEST = 2
+    companion object {
+        private const val PICK_IMAGE_REQUEST = 1
+        private const val PICK_VIDEO_REQUEST = 2
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.activity_status, container, false)
+
         recyclerView = view.findViewById(R.id.recyclerView)
         statusEditText = view.findViewById(R.id.statusEditText)
         statusImageView = view.findViewById(R.id.statusImageView)
@@ -68,65 +73,106 @@ class StatusFragment : Fragment() {
 
         setupClickListeners()
         setupStatusRecyclerView()
-        setupStatusGroupRecyclerView()
+        setupStatusGroupRecyclerView() // NEW: Initialize Status Group View
+        setupRecyclerViewScrollListener()
+
+        statusVideoView.apply {
+            setOnCompletionListener { start() }
+            setOnClickListener {
+                if (isPlaying) pause() else start()
+            }
+        }
 
         return view
     }
+    private fun setupRecyclerViewScrollListener() {
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                playMostVisibleVideo()
+            }
+        })
+    }
+
+    private fun playMostVisibleVideo() {
+        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+        val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
+        val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
+
+        var mostVisibleViewHolder: StatusRecyclerAdapter.StatusViewHolder? = null
+        var maxVisibleArea = 0
+
+        for (i in firstVisiblePosition..lastVisiblePosition) {
+            val holder = recyclerView.findViewHolderForAdapterPosition(i) as? StatusRecyclerAdapter.StatusViewHolder
+            if (holder != null && holder.statusVideo.visibility == View.VISIBLE) {
+                val location = IntArray(2)
+                holder.statusVideo.getLocationOnScreen(location)
+                val visibleHeight = recyclerView.height - location[1]
+
+                if (visibleHeight > maxVisibleArea) {
+                    maxVisibleArea = visibleHeight
+                    mostVisibleViewHolder = holder
+                }
+            }
+        }
+
+        mostVisibleViewHolder?.statusVideo?.start()
+    }
+
 
     private fun setupStatusGroupRecyclerView() {
+        statusGroupRecyclerView.layoutManager =
+            LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        statusGroupAdapter = StatusGroupAdapter(emptyList()) { userId ->
+            updateStatusRecyclerView(userId)
+        }
+        statusGroupRecyclerView.adapter = statusGroupAdapter
+    }
+
+    private fun fetchStatusUpdates() {
         val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
         val query = FirebaseFirestore.getInstance()
             .collection("status")
-            .whereGreaterThan("timestamp", Timestamp(oneDayAgo)) // Filter out old statuses
+            .whereGreaterThan("timestamp", Timestamp(oneDayAgo))
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(1)  // Limit the query to just one document
 
-        val options = FirestoreRecyclerOptions.Builder<StatusModel>()
-            .setQuery(query, StatusModel::class.java)
-            .build()
+        statusListener?.remove() // Remove old listener before setting a new one
 
-        statusGroupAdapter = StatusGroupAdapter(options ){ userId ->
-            // Handle item click and fetch the specific user's statuses
-            updateStatusRecyclerView(userId)
+        statusListener = query.addSnapshotListener { snapshot, _ ->
+            if (snapshot != null) {
+                val latestStatuses = hashMapOf<String, StatusModel>()
+
+                for (document in snapshot.documents) {
+                    val status = document.toObject(StatusModel::class.java)
+                    if (status != null) {
+                        latestStatuses[status.userId] = status // Keep only the latest status per user
+                    }
+                }
+
+                val uniqueStatusList = latestStatuses.values.toList()
+                statusGroupAdapter.updateStatusList(uniqueStatusList)
+            }
         }
-        statusGroupRecyclerView.layoutManager = LinearLayoutManager(context)
-        statusGroupRecyclerView.adapter = statusGroupAdapter
-        statusGroupAdapter.startListening()
     }
+
     private fun updateStatusRecyclerView(userId: String) {
         val query = FirebaseFirestore.getInstance()
             .collection("status")
+            .whereEqualTo("userId", userId)
             .orderBy("timestamp", Query.Direction.DESCENDING)
 
         val options = FirestoreRecyclerOptions.Builder<StatusModel>()
             .setQuery(query, StatusModel::class.java)
             .build()
 
-        // Update the adapter with new query options for all statuses
         adapter?.updateOptions(options)
-
-        // Now, add the query for the selected user's statuses
-        val userQuery = FirebaseFirestore.getInstance()
-            .collection("status")
-            .whereEqualTo("userId", userId)  // Filter by the selected user's ID
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-
-        val userOptions = FirestoreRecyclerOptions.Builder<StatusModel>()
-            .setQuery(userQuery, StatusModel::class.java)
-            .build()
-
-        // Update the adapter to reflect the user's statuses
-        adapter?.updateOptions(userOptions)
     }
-
-
 
     private fun setupClickListeners() {
         uploadButton.setOnClickListener {
             val statusText = statusEditText.text.toString().trim()
 
             if (mediaUri != null && mediaType != null) {
-                // If it's a video, check the duration before uploading
                 if (mediaType == "video" && !isVideoDurationValid(mediaUri!!)) {
                     Toast.makeText(context, "Video must be 30 seconds or less", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
@@ -147,55 +193,50 @@ class StatusFragment : Fragment() {
         }
 
         fab.setOnClickListener {
-            // Create an options dialog for selecting image or video
             constraintStatus.isVisible = true
             fab.isVisible = false
             val options = arrayOf("Select Image", "Select Video")
-            val builder = AlertDialog.Builder(requireContext())
-            builder.setTitle("Select Media")
-            builder.setItems(options) { _, which ->
-                when (which) {
-                    0 -> { // If "Select Image" is clicked
-                        val intent = Intent(Intent.ACTION_PICK)
-                        intent.type = "image/*"
-                        startActivityForResult(intent, PICK_IMAGE_REQUEST)
-                    }
-
-                    1 -> { // If "Select Video" is clicked
-                        val intent = Intent(Intent.ACTION_PICK)
-                        intent.type = "video/*"
-                        startActivityForResult(intent, PICK_VIDEO_REQUEST)
+            AlertDialog.Builder(requireContext())
+                .setTitle("Select Media")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> pickMedia(PICK_IMAGE_REQUEST, "image/*")
+                        1 -> pickMedia(PICK_VIDEO_REQUEST, "video/*")
                     }
                 }
-            }
-            builder.show()
+                .show()
         }
 
         backStatus.setOnClickListener {
             constraintStatus.isVisible = false
             fab.isVisible = true
+            statusVideoView.pause()
         }
+    }
+
+    private fun pickMedia(requestCode: Int, type: String) {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = type
+        startActivityForResult(intent, requestCode)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && data != null) {
+            mediaUri = data.data!!
             when (requestCode) {
                 PICK_IMAGE_REQUEST -> {
-                    mediaUri = data.data!!
                     mediaType = "image"
                     statusImageView.setImageURI(mediaUri)
                     statusImageView.visibility = View.VISIBLE
-                    statusVideoView.visibility = View.GONE  // Hide VideoView
+                    statusVideoView.visibility = View.GONE
                 }
                 PICK_VIDEO_REQUEST -> {
-                    mediaUri = data.data!!
                     mediaType = "video"
-                    // You can use Glide or MediaMetadataRetriever to show a thumbnail of the video
-                    statusImageView.visibility = View.GONE  // Hide ImageView
-                    statusVideoView.setVideoURI(mediaUri)  // Set the video URI to the VideoView
-                    statusVideoView.visibility = View.VISIBLE  // Show VideoView for video playback
-                    statusVideoView.start()  // Start video playback if needed
+                    statusVideoView.setVideoURI(mediaUri)
+                    statusVideoView.visibility = View.VISIBLE
+                    statusImageView.visibility = View.GONE
+                    statusVideoView.start()
                 }
             }
         }
@@ -205,7 +246,7 @@ class StatusFragment : Fragment() {
         val oneDayAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.time
         val query = FirebaseFirestore.getInstance()
             .collection("status")
-            .whereGreaterThan("timestamp", Timestamp(oneDayAgo)) // Filter out old statuses
+            .whereGreaterThan("timestamp", Timestamp(oneDayAgo))
             .orderBy("timestamp", Query.Direction.DESCENDING)
 
         val options = FirestoreRecyclerOptions.Builder<StatusModel>()
@@ -215,25 +256,28 @@ class StatusFragment : Fragment() {
         adapter = StatusRecyclerAdapter(options)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
-        adapter?.startListening()
     }
 
     override fun onStart() {
         super.onStart()
         adapter?.startListening()
+        fetchStatusUpdates()
     }
 
     override fun onStop() {
         super.onStop()
         adapter?.stopListening()
     }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        statusVideoView.stopPlayback()  // Stop video playback when fragment is destroyed
+    }
 
     private fun isVideoDurationValid(videoUri: Uri): Boolean {
         val retriever = MediaMetadataRetriever()
         retriever.setDataSource(context, videoUri)
-        val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val durationInMs = durationStr?.toLongOrNull() ?: 0
+        val durationInMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0
         retriever.release()
-        return durationInMs <= 30000  // 30 seconds in milliseconds
+        return durationInMs <= 30000
     }
 }

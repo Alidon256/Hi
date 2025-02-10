@@ -14,7 +14,6 @@ import com.example.heyyou.utils.FirebaseUtil
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import java.util.*
-
 class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
     FirestoreRecyclerAdapter<StatusModel, StatusRecyclerAdapter.StatusViewHolder>(options) {
 
@@ -40,8 +39,6 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
                 }
             })
 
-
-            // Load Profile Picture
             FirebaseUtil.getOtherProfilePicStorageRef(model.userId).downloadUrl
                 .addOnSuccessListener { uri ->
                     Glide.with(holder.userImage.context)
@@ -53,7 +50,6 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
                     holder.userImage.setImageResource(R.drawable.person_icon)
                 }
 
-            // Handle media display
             when (model.mediaType) {
                 "image" -> {
                     holder.statusImage.visibility = View.VISIBLE
@@ -61,38 +57,34 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
                     Glide.with(holder.statusImage.context).load(model.mediaUrl).into(holder.statusImage)
                 }
                 "video" -> {
-                    holder.statusVideo.setVideoPath(model.mediaUrl)
+                    holder.statusImage.visibility = View.GONE
                     holder.statusVideo.visibility = View.VISIBLE
-                    holder.statusImage.visibility = View.GONE
+                    holder.statusVideo.setVideoPath(model.mediaUrl)
 
-                    if (!holder.statusVideo.isPlaying) {
-                        Glide.with(holder.statusImage.context)
-                            .load(model.mediaUrl) // Load thumbnail
-                            .into(holder.statusImage)
-                        holder.statusImage.visibility = View.VISIBLE
-                    } else {
-                        holder.statusImage.visibility = View.GONE
+                    holder.statusVideo.setOnPreparedListener {
+                        it.setVolume(1f, 1f) // Ensure volume is on
+                        it.isLooping = true // Optional looping
+                        checkAndPlayMostVisibleVideo(holder)
                     }
 
-                    if (!holder.statusVideo.isPlaying) {
-                        currentlyPlaying?.pause()
-                        currentlyPlaying = holder.statusVideo
-                        holder.statusVideo.start()
+                    holder.statusVideo.setOnClickListener {
+                        if (holder.statusVideo.isPlaying) {
+                            holder.statusVideo.pause()
+                        } else {
+                            checkAndPlayMostVisibleVideo(holder)
+                        }
                     }
-
-                    holder.statusVideo.setOnCompletionListener {
-                        holder.statusVideo.resume()
-                    }
-                }
-                else -> {
-                    holder.statusImage.visibility = View.GONE
-                    holder.statusVideo.visibility = View.GONE
                 }
             }
 
-            // Display timestamp
             holder.timestampText.text = FirebaseUtil.timestampToString(model.timestamp)
         }
+    }
+
+    private fun checkAndPlayMostVisibleVideo(holder: StatusViewHolder) {
+        currentlyPlaying?.pause() // Pause previous video
+        currentlyPlaying = holder.statusVideo
+        currentlyPlaying?.start()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StatusViewHolder {
@@ -100,10 +92,15 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
         return StatusViewHolder(view)
     }
 
-    override fun onDataChanged() {
-        super.onDataChanged()
-        notifyDataSetChanged()
+    override fun onViewRecycled(holder: StatusViewHolder) {
+        super.onViewRecycled(holder)
+        holder.statusVideo.pause() // Stop playing when recycled
     }
+    override fun onViewDetachedFromWindow(holder: StatusViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        holder.statusVideo.pause()  // Pause video when item is scrolled off-screen
+    }
+
 
     class StatusViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val statusText: TextView = itemView.findViewById(R.id.statusText)
@@ -112,12 +109,5 @@ class StatusRecyclerAdapter(options: FirestoreRecyclerOptions<StatusModel>) :
         val timestampText: TextView = itemView.findViewById(R.id.timestampText)
         val userImage: ImageView = itemView.findViewById(R.id.me)
         val userName: TextView = itemView.findViewById(R.id.userName)
-    }
-
-    override fun onViewRecycled(holder: StatusViewHolder) {
-        super.onViewRecycled(holder)
-        if (holder.statusVideo.isPlaying) {
-            holder.statusVideo.pause()
-        }
     }
 }
